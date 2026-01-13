@@ -69,7 +69,7 @@ final class FrameGenerator {
     ) {
         let bottomAreaHeight = bottomMargin
         let bottomAreaTop = imageBottom
-        let bottomAreaBottom = imageBottom + bottomAreaHeight
+        _ = imageBottom + bottomAreaHeight
 
         let titleFontSize = frameWidth * 0.024
         let specsFontSize = frameWidth * 0.018
