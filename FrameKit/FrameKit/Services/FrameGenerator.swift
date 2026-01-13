@@ -21,7 +21,7 @@ final class FrameGenerator {
         metadata: PhotoMetadata
     ) -> UIImage? {
         let imageSize = originalImage.size
-        let aspectRatio = imageSize.width / imageSize.height
+        _ = imageSize.width / imageSize.height
         
         let frameWidth = imageSize.width + (horizontalMargin * 2)
         let frameHeight = imageSize.height + topMargin + bottomMargin

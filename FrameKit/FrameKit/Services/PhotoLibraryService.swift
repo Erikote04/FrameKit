@@ -62,7 +62,7 @@ final class PhotoLibraryService {
     }
     
     func extractMetadata(from asset: PHAsset) -> PhotoMetadata? {
-        guard let resource = PHAssetResource.assetResources(for: asset).first else {
+        guard PHAssetResource.assetResources(for: asset).first != nil else {
             return nil
         }
         
