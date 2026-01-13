@@ -16,18 +16,22 @@ struct PhotoGridItem: View {
     @State private var thumbnail: UIImage?
     
     var body: some View {
-        Group {
-            if let thumbnail = thumbnail {
-                Image(uiImage: thumbnail)
-                    .resizable()
-                    .aspectRatio(1, contentMode: .fill)
-            } else {
-                Rectangle()
-                    .fill(Color.gray.opacity(0.2))
-                    .aspectRatio(1, contentMode: .fill)
+        GeometryReader { geometry in
+            Group {
+                if let thumbnail = thumbnail {
+                    Image(uiImage: thumbnail)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geometry.size.width, height: geometry.size.width)
+                } else {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(width: geometry.size.width, height: geometry.size.width)
+                }
             }
+            .clipped()
         }
-        .clipped()
+        .aspectRatio(1, contentMode: .fit)
         .task {
             thumbnail = await PhotoLibraryService.shared.loadImage(
                 from: asset,
