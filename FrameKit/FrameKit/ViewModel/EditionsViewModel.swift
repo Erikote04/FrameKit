@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+enum SortOption {
+    case captureDate
+    case modifiedDate
+    case fileName
+}
+
 @Observable
 final class EditionsViewModel {
     
@@ -14,6 +20,8 @@ final class EditionsViewModel {
     var selectedPhotos: Set<FramedPhoto.ID> = []
     var isSelectionMode = false
     var selectedPhoto: FramedPhoto?
+    var sortOption: SortOption = .captureDate
+    var isAscending = false
     
     private let storageService: StorageService
     
@@ -23,6 +31,28 @@ final class EditionsViewModel {
     
     func loadFramedPhotos() {
         framedPhotos = storageService.fetchAllFramedPhotos()
+        applySorting()
+    }
+    
+    func setSortOption(_ option: SortOption) {
+        sortOption = option
+        applySorting()
+    }
+    
+    func toggleSortOrder() {
+        isAscending.toggle()
+        applySorting()
+    }
+    
+    private func applySorting() {
+        switch sortOption {
+        case .captureDate:
+            framedPhotos.sort { isAscending ? $0.createdAt < $1.createdAt : $0.createdAt > $1.createdAt }
+        case .modifiedDate:
+            framedPhotos.sort { isAscending ? $0.createdAt < $1.createdAt : $0.createdAt > $1.createdAt }
+        case .fileName:
+            framedPhotos.sort { isAscending ? $0.deviceModel < $1.deviceModel : $0.deviceModel > $1.deviceModel }
+        }
     }
     
     func toggleSelection(for photo: FramedPhoto) {

@@ -42,10 +42,17 @@ final class StorageService {
         try modelContext.save()
     }
     
-    func fetchAllFramedPhotos() -> [FramedPhoto] {
-        let descriptor = FetchDescriptor<FramedPhoto>(
-            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
-        )
+    func fetchAllFramedPhotos(sortBy option: SortOption = .modifiedDate, ascending: Bool = false) -> [FramedPhoto] {
+        let sortDescriptor: SortDescriptor<FramedPhoto>
+        
+        switch option {
+        case .captureDate, .modifiedDate:
+            sortDescriptor = SortDescriptor(\.createdAt, order: ascending ? .forward : .reverse)
+        case .fileName:
+            sortDescriptor = SortDescriptor(\.deviceModel, order: ascending ? .forward : .reverse)
+        }
+        
+        let descriptor = FetchDescriptor<FramedPhoto>(sortBy: [sortDescriptor])
         
         do {
             return try modelContext.fetch(descriptor)

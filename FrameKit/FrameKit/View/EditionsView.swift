@@ -13,6 +13,10 @@ struct EditionsView: View {
     @State private var showPreview = false
     @State private var showDeleteConfirmation = false
     
+    private var currentDay: String {
+        String(Calendar.current.component(.day, from: Date()))
+    }
+    
     init(storageService: StorageService) {
         _viewModel = State(initialValue: EditionsViewModel(storageService: storageService))
     }
@@ -23,21 +27,21 @@ struct EditionsView: View {
                 if viewModel.framedPhotos.isEmpty {
                     emptyState
                 } else {
-                    photosGrid
+                    photosContent
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitle(viewModel.isSelectionMode ? viewModel.selectionTitle : "")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
                     if viewModel.isSelectionMode {
-                        selectionToolbar
+                        ToolbarItem(placement: .topBarLeading) { deleteButton }
+                        ToolbarItem { shareButton }
+                        ToolbarItem { doneButton }
                     } else {
-                        Button("Select") {
-                            viewModel.isSelectionMode = true
-                        }
+                        ToolbarItem { selectButton }
+                        ToolbarSpacer(.fixed)
+                        ToolbarItem { filterButton }
                     }
-                }
             }
             .onAppear {
                 viewModel.loadFramedPhotos()
@@ -72,52 +76,120 @@ struct EditionsView: View {
         }
     }
     
-    private var photosGrid: some View {
-        ScrollView {
-            AdaptivePhotoGrid(
-                photos: viewModel.framedPhotos,
-                isSelectionMode: viewModel.isSelectionMode,
-                selectedPhotos: viewModel.selectedPhotos,
-                onPhotoTap: { photo in
-                    if viewModel.isSelectionMode {
-                        viewModel.toggleSelection(for: photo)
-                    } else {
-                        viewModel.selectedPhoto = photo
-                        showPreview = true
+    private var photosContent: some View {
+        VStack(spacing: 0) {
+            if viewModel.isSelectionMode {
+                selectAllCheckbox
+            }
+            
+            ScrollView {
+                AdaptivePhotoGrid(
+                    photos: viewModel.framedPhotos,
+                    isSelectionMode: viewModel.isSelectionMode,
+                    selectedPhotos: viewModel.selectedPhotos,
+                    onPhotoTap: { photo in
+                        if viewModel.isSelectionMode {
+                            viewModel.toggleSelection(for: photo)
+                        } else {
+                            viewModel.selectedPhoto = photo
+                            showPreview = true
+                        }
+                    },
+                    onPhotoLongPress: { photo in
+                        viewModel.enterSelectionMode(with: photo)
                     }
-                },
-                onPhotoLongPress: { photo in
-                    viewModel.enterSelectionMode(with: photo)
-                }
-            )
-            .padding()
+                )
+                .padding()
+            }
         }
     }
     
-    private var selectionToolbar: some View {
-        HStack(spacing: 16) {
-            Button("Select All") {
-                viewModel.selectAll()
-            }
-            
-            ShareLink(
-                item: Image(uiImage: viewModel.getSelectedImages().first ?? UIImage()),
-                preview: SharePreview("Framed Photos")
-            ) {
-                Image(systemName: "square.and.arrow.up")
-            }
-            .disabled(!viewModel.canPerformActions)
-            
-            Button(role: .destructive) {
-                showDeleteConfirmation = true
+    private var selectAllCheckbox: some View {
+        HStack {
+            Button {
+                if viewModel.selectedPhotos.count == viewModel.framedPhotos.count {
+                    viewModel.clearSelection()
+                    viewModel.isSelectionMode = true
+                } else {
+                    viewModel.selectAll()
+                }
             } label: {
-                Image(systemName: "trash")
+                HStack(spacing: 12) {
+                    Image(systemName: viewModel.selectedPhotos.count == viewModel.framedPhotos.count ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(viewModel.selectedPhotos.count == viewModel.framedPhotos.count ? .blue : .secondary)
+                        .font(.title3)
+                    
+                    Text("Select All")
+                        .foregroundStyle(.primary)
+                }
             }
-            .disabled(!viewModel.canPerformActions)
+            .padding(.horizontal)
+            .padding(.vertical, 12)
             
-            Button("Cancel") {
-                viewModel.clearSelection()
+            Spacer()
+        }
+        .background(Color(uiColor: .systemBackground))
+    }
+    
+    private var selectButton: some View {
+        Button("Select") {
+            viewModel.isSelectionMode = true
+        }
+    }
+    
+    private var filterButton: some View {
+        Menu {
+            Button {
+                viewModel.setSortOption(.captureDate)
+            } label: {
+                Label("Capture Date", systemImage: viewModel.sortOption == .captureDate ? "checkmark" : "\(currentDay).calendar")
             }
+            
+            Button {
+                viewModel.setSortOption(.modifiedDate)
+            } label: {
+                Label("Modification Date", systemImage: viewModel.sortOption == .modifiedDate ? "checkmark" : "square.and.pencil")
+            }
+            
+            Button {
+                viewModel.setSortOption(.fileName)
+            } label: {
+                Label("File Name", systemImage: viewModel.sortOption == .fileName ? "checkmark" : "document")
+            }
+            
+            Divider()
+            
+            Button {
+                viewModel.toggleSortOrder()
+            } label: {
+                Label("Reverse Order", systemImage: viewModel.isAscending ? "checkmark" : "arrow.up.arrow.down")
+            }
+        } label: {
+            Image(systemName: "line.3.horizontal.decrease")
+        }
+    }
+    
+    private var deleteButton: some View {
+        Button(role: .destructive) {
+            showDeleteConfirmation = true
+        } label: {
+            Image(systemName: "trash")
+        }
+        .tint(.red)
+    }
+    
+    private var shareButton: some View {
+        ShareLink(
+            item: Image(uiImage: viewModel.getSelectedImages().first ?? UIImage()),
+            preview: SharePreview("Framed Photos")
+        ) {
+            Image(systemName: "square.and.arrow.up")
+        }
+    }
+    
+    private var doneButton: some View {
+        Button(role: .confirm) {
+            viewModel.clearSelection()
         }
     }
     
