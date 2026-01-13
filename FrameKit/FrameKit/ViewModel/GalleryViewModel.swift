@@ -1,0 +1,103 @@
+//
+//  GalleryViewModel.swift
+//  FrameKit
+//
+//  Created by Erik Sebastian de Erice Jerez on 13/1/26.
+//
+
+import SwiftUI
+import Photos
+
+@Observable
+final class GalleryViewModel {
+    
+    var photos: [PHAsset] = []
+    var isAuthorized = false
+    var selectedAsset: PHAsset?
+    var selectedImage: UIImage?
+    var framedImage: UIImage?
+    var metadata: PhotoMetadata?
+    
+    private let photoLibraryService = PhotoLibraryService.shared
+    private let frameGenerator = FrameGenerator()
+    
+    func requestAuthorization() async {
+        isAuthorized = await photoLibraryService.requestAuthorization()
+        if isAuthorized {
+            loadPhotos()
+        }
+    }
+    
+    func loadPhotos() {
+        let fetchResult = photoLibraryService.fetchAllPhotos()
+        photos = fetchResult.objects(at: IndexSet(0..<fetchResult.count))
+    }
+    
+    func selectPhoto(_ asset: PHAsset) async {
+        selectedAsset = asset
+        
+        guard let image = await photoLibraryService.loadFullResolutionImage(from: asset) else {
+            return
+        }
+        
+        selectedImage = image
+        metadata = photoLibraryService.extractMetadata(from: asset)
+        
+        if let metadata = metadata {
+            framedImage = frameGenerator.generateFramedImage(
+                from: image,
+                metadata: metadata
+            )
+        }
+    }
+    
+    func saveFramedPhoto(storageService: StorageService) async throws {
+        guard let originalImage = selectedImage,
+              let framedImage = framedImage,
+              let metadata = metadata else {
+            return
+        }
+        
+        let aspectRatio = originalImage.size.width / originalImage.size.height
+        
+        try storageService.saveFramedPhoto(
+            originalImage: originalImage,
+            framedImage: framedImage,
+            metadata: metadata,
+            aspectRatio: aspectRatio
+        )
+    }
+    
+    func exportFramedPhoto() async -> Bool {
+        guard let framedImage = framedImage else {
+            return false
+        }
+        
+        return await photoLibraryService.saveToLibrary(framedImage)
+    }
+    
+    func deleteSelectedPhoto() async -> Bool {
+        guard let asset = selectedAsset else {
+            return false
+        }
+        
+        let success = await photoLibraryService.deleteFromLibrary(asset)
+        
+        if success {
+            selectedAsset = nil
+            selectedImage = nil
+            framedImage = nil
+            metadata = nil
+            loadPhotos()
+        }
+        
+        return success
+    }
+    
+    func clearSelection() {
+        selectedAsset = nil
+        selectedImage = nil
+        framedImage = nil
+        metadata = nil
+    }
+}
