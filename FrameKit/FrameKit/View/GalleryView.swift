@@ -41,8 +41,8 @@ struct GalleryView: View {
                 if let framedImage = viewModel.framedImage {
                     PhotoPreviewView(
                         image: framedImage,
-                        onExport: {
-                            await handleExport()
+                        onSave: {
+                            await handleSave()
                         },
                         onDelete: {
                             await handleDelete()
@@ -104,15 +104,11 @@ struct GalleryView: View {
         }
     }
     
-    private func handleExport() async {
-        let success = await viewModel.exportFramedPhoto()
-        
-        if success {
-            do {
-                try await viewModel.saveFramedPhoto(storageService: storageService)
-            } catch {
-                print("Failed to save framed photo")
-            }
+    private func handleSave() async {
+        do {
+            try await viewModel.saveFramedPhoto(storageService: storageService)
+        } catch {
+            print("Failed to save framed photo")
         }
     }
     

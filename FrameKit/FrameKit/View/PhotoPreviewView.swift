@@ -10,12 +10,11 @@ import SwiftUI
 struct PhotoPreviewView: View {
     
     let image: UIImage
-    let onExport: () async -> Void
+    let onSave: () async -> Void
     let onDelete: () async -> Void
     let onDismiss: () -> Void
     
     @State private var showDeleteConfirmation = false
-    @State private var isExporting = false
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -44,21 +43,15 @@ struct PhotoPreviewView: View {
                 }
                 
                 ToolbarItem {
-                    Button {
-                        Task {
-                            isExporting = true
-                            await onExport()
-                            isExporting = false
-                        }
-                    } label: {
-                        if isExporting {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Image(systemName: "square.and.arrow.up")
-                        }
+                    ShareLink(item: Image(uiImage: image), preview: SharePreview("Framed Photo", image: Image(uiImage: image))) {
+                        Image(systemName: "square.and.arrow.up")
                     }
-                    .disabled(isExporting)
+                    .tint(.white)
+                    .simultaneousGesture(TapGesture().onEnded {
+                        Task {
+                            await onSave()
+                        }
+                    })
                 }
                 
                 ToolbarSpacer(.fixed)

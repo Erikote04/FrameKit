@@ -73,14 +73,6 @@ final class GalleryViewModel {
         )
     }
     
-    func exportFramedPhoto() async -> Bool {
-        guard let framedImage = framedImage else {
-            return false
-        }
-        
-        return await photoLibraryService.saveToLibrary(framedImage)
-    }
-    
     func deleteSelectedPhoto() async -> Bool {
         guard let asset = selectedAsset else {
             return false
