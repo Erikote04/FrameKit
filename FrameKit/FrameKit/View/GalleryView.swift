@@ -12,6 +12,7 @@ struct GalleryView: View {
     
     @State private var viewModel = GalleryViewModel()
     @State private var showPreview = false
+    @State private var showInvalidPhotoAlert = false
     
     let storageService: StorageService
     
@@ -30,6 +31,11 @@ struct GalleryView: View {
             .navigationBarTitleDisplayMode(.inline)
             .task {
                 await viewModel.requestAuthorization()
+            }
+            .alert("Invalid Photo", isPresented: $showInvalidPhotoAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("This photo cannot be framed. Only photos taken with a camera are supported. Screenshots are not compatible.")
             }
             .fullScreenCover(isPresented: $showPreview) {
                 if let framedImage = viewModel.framedImage {
@@ -60,8 +66,12 @@ struct GalleryView: View {
                     )
                     .onTapGesture {
                         Task {
-                            await viewModel.selectPhoto(asset)
-                            showPreview = true
+                            let hasMetadata = await viewModel.selectPhoto(asset)
+                            if hasMetadata {
+                                showPreview = true
+                            } else {
+                                showInvalidPhotoAlert = true
+                            }
                         }
                     }
                 }

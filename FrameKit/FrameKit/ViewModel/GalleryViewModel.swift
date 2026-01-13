@@ -33,22 +33,27 @@ final class GalleryViewModel {
         photos = fetchResult.objects(at: IndexSet(0..<fetchResult.count))
     }
     
-    func selectPhoto(_ asset: PHAsset) async {
+    func selectPhoto(_ asset: PHAsset) async -> Bool {
         selectedAsset = asset
         
         guard let image = await photoLibraryService.loadFullResolutionImage(from: asset) else {
-            return
+            return false
         }
         
         selectedImage = image
         metadata = await photoLibraryService.extractMetadata(from: asset)
         
-        if let metadata = metadata {
-            framedImage = frameGenerator.generateFramedImage(
-                from: image,
-                metadata: metadata
-            )
+        guard let metadata = metadata else {
+            clearSelection()
+            return false
         }
+        
+        framedImage = frameGenerator.generateFramedImage(
+            from: image,
+            metadata: metadata
+        )
+        
+        return true
     }
     
     func saveFramedPhoto(storageService: StorageService) async throws {

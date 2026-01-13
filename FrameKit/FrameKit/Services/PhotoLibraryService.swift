@@ -69,8 +69,12 @@ final class PhotoLibraryService {
             asset.requestContentEditingInput(with: options) { input, _ in
                 guard let input = input,
                       let imageSource = CGImageSourceCreateWithURL(input.fullSizeImageURL! as CFURL, nil),
-                      let properties = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [String: Any],
-                      let exif = properties[kCGImagePropertyExifDictionary as String] as? [String: Any],
+                      let properties = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [String: Any] else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                guard let exif = properties[kCGImagePropertyExifDictionary as String] as? [String: Any],
                       let tiff = properties[kCGImagePropertyTIFFDictionary as String] as? [String: Any] else {
                     continuation.resume(returning: nil)
                     return
