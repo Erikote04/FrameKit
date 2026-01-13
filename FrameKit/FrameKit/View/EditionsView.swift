@@ -175,6 +175,7 @@ struct EditionsView: View {
         } label: {
             Image(systemName: "trash")
         }
+        .tint(.red)
     }
     
     private var shareButton: some View {
