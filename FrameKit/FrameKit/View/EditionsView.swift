@@ -47,7 +47,6 @@ struct EditionsView: View {
                    let image = UIImage(data: photo.framedImageData) {
                     PhotoPreviewView(
                         image: image,
-                        isFromGallery: false,
                         onExport: {},
                         onDelete: {
                             try? viewModel.deletePhoto(photo)

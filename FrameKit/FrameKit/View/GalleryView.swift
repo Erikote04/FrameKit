@@ -31,11 +31,10 @@ struct GalleryView: View {
             .task {
                 await viewModel.requestAuthorization()
             }
-            .sheet(isPresented: $showPreview) {
+            .fullScreenCover(isPresented: $showPreview) {
                 if let framedImage = viewModel.framedImage {
                     PhotoPreviewView(
                         image: framedImage,
-                        isFromGallery: true,
                         onExport: {
                             await handleExport()
                         },

@@ -10,7 +10,6 @@ import SwiftUI
 struct PhotoPreviewView: View {
     
     let image: UIImage
-    let isFromGallery: Bool
     let onExport: () async -> Void
     let onDelete: () async -> Void
     let onDismiss: () -> Void
@@ -36,41 +35,41 @@ struct PhotoPreviewView: View {
             .background(Color.black)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Close") {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .close) {
                         onDismiss()
                         dismiss()
                     }
                     .tint(.white)
                 }
                 
-                ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 16) {
-                        if isFromGallery {
-                            Button {
-                                Task {
-                                    isExporting = true
-                                    await onExport()
-                                    isExporting = false
-                                }
-                            } label: {
-                                if isExporting {
-                                    ProgressView()
-                                        .tint(.white)
-                                } else {
-                                    Image(systemName: "square.and.arrow.up")
-                                }
-                            }
-                            .disabled(isExporting)
+                ToolbarItem {
+                    Button {
+                        Task {
+                            isExporting = true
+                            await onExport()
+                            isExporting = false
                         }
-                        
-                        Button(role: .destructive) {
-                            showDeleteConfirmation = true
-                        } label: {
-                            Image(systemName: "trash")
+                    } label: {
+                        if isExporting {
+                            ProgressView()
+                                .tint(.white)
+                        } else {
+                            Image(systemName: "square.and.arrow.up")
                         }
                     }
-                    .tint(.white)
+                    .disabled(isExporting)
+                }
+                
+                ToolbarSpacer(.fixed)
+                
+                ToolbarItem {
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .tint(.red)
                 }
             }
             .confirmationDialog(
