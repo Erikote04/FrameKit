@@ -83,37 +83,39 @@ final class PhotoLibraryService {
                 let deviceModel = (tiff[kCGImagePropertyTIFFModel as String] as? String) ?? "iPhone"
                 
                 let focalLength: String
-                if let focalLengthValue = exif[kCGImagePropertyExifFocalLength as String] as? Double {
-                    focalLength = "\(Int(focalLengthValue))mm"
+                if let focal35 = exif[kCGImagePropertyExifFocalLenIn35mmFilm as String] as? Double {
+                    focalLength = "\(Int(focal35))mm"
+                } else if let focalPhysical = exif[kCGImagePropertyExifFocalLength as String] as? Double {
+                    focalLength = "\(Int(focalPhysical))mm"
                 } else {
                     focalLength = "24mm"
                 }
                 
                 let aperture: String
                 if let apertureValue = exif[kCGImagePropertyExifFNumber as String] as? Double {
-                    aperture = "ƒ/\(String(format: "%.1f", apertureValue))"
+                    aperture = " ƒ/\(String(format: "%.1f", apertureValue))"
                 } else {
-                    aperture = "ƒ/1.8"
+                    aperture = " ƒ/1.8"
                 }
                 
                 let shutterSpeed: String
                 if let exposureTime = exif[kCGImagePropertyExifExposureTime as String] as? Double {
                     if exposureTime >= 1 {
-                        shutterSpeed = "\(Int(exposureTime))s"
+                        shutterSpeed = " \(Int(exposureTime))s"
                     } else {
                         let denominator = Int(1 / exposureTime)
-                        shutterSpeed = "1/\(denominator)s"
+                        shutterSpeed = " 1/\(denominator)s"
                     }
                 } else {
-                    shutterSpeed = "1/120s"
+                    shutterSpeed = " 1/120s"
                 }
                 
                 let iso: String
                 if let isoArray = exif[kCGImagePropertyExifISOSpeedRatings as String] as? [Int],
                    let isoValue = isoArray.first {
-                    iso = "ISO \(isoValue)"
+                    iso = " ISO\(isoValue)"
                 } else {
-                    iso = "ISO 100"
+                    iso = " ISO100"
                 }
                 
                 let metadata = PhotoMetadata(

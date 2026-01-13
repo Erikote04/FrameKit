@@ -10,22 +10,24 @@ import CoreGraphics
 
 final class FrameGenerator {
     
-    private let horizontalMargin: CGFloat = 60
-    private let topMargin: CGFloat = 60
-    private let bottomMargin: CGFloat = 180
-    private let textBottomPadding: CGFloat = 40
-    private let lineSpacing: CGFloat = 8
+    private let horizontalMargin: CGFloat = 80
+    private let topMargin: CGFloat = 80
+    private let bottomMargin: CGFloat = 320
+    private let textBottomPadding: CGFloat = 60
+    private let lineSpacing: CGFloat = 20
     
     func generateFramedImage(
         from originalImage: UIImage,
         metadata: PhotoMetadata
     ) -> UIImage? {
         let imageSize = originalImage.size
-        let aspectRatio = imageSize.width / imageSize.height
-        let isLandscape = aspectRatio > 1.0
         
-        let frameWidth = imageSize.width + (horizontalMargin * 2)
-        let frameHeight = imageSize.height + topMargin + bottomMargin
+        let scaleFactor: CGFloat = 0.85
+        let scaledImageWidth = imageSize.width * scaleFactor
+        let scaledImageHeight = imageSize.height * scaleFactor
+        
+        let frameWidth = scaledImageWidth + (horizontalMargin * 2)
+        let frameHeight = scaledImageHeight + topMargin + bottomMargin
         
         let format = UIGraphicsImageRendererFormat()
         format.scale = originalImage.scale
@@ -45,8 +47,8 @@ final class FrameGenerator {
             let imageRect = CGRect(
                 x: horizontalMargin,
                 y: topMargin,
-                width: imageSize.width,
-                height: imageSize.height
+                width: scaledImageWidth,
+                height: scaledImageHeight
             )
             originalImage.draw(in: imageRect)
             
@@ -54,8 +56,7 @@ final class FrameGenerator {
                 in: cgContext,
                 metadata: metadata,
                 frameWidth: frameWidth,
-                imageBottom: topMargin + imageSize.height,
-                isLandscape: isLandscape
+                imageBottom: topMargin + scaledImageHeight
             )
         }
     }
@@ -64,33 +65,76 @@ final class FrameGenerator {
         in context: CGContext,
         metadata: PhotoMetadata,
         frameWidth: CGFloat,
-        imageBottom: CGFloat,
-        isLandscape: Bool
+        imageBottom: CGFloat
     ) {
-        let deviceFontSize: CGFloat = isLandscape ? 48 : 32
-        let specsFontSize: CGFloat = isLandscape ? 36 : 24
-        let lineHeight: CGFloat = isLandscape ? 60 : 40
-        
-        let textY = imageBottom + textBottomPadding
-        
-        drawDeviceLine(
-            in: context,
-            text: metadata.formattedDevice,
-            deviceModel: metadata.deviceModel,
-            centerX: frameWidth / 2,
-            y: textY,
-            fontSize: deviceFontSize
+        let bottomAreaHeight = bottomMargin
+        let bottomAreaTop = imageBottom
+        let bottomAreaBottom = imageBottom + bottomAreaHeight
+
+        let titleFontSize = frameWidth * 0.024
+        let specsFontSize = frameWidth * 0.018
+
+        let titleFont = UIFont.systemFont(ofSize: titleFontSize, weight: .regular)
+        let titleBoldFont = UIFont.systemFont(ofSize: titleFontSize, weight: .bold)
+        let specsFont = UIFont.systemFont(ofSize: specsFontSize, weight: .regular)
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+
+        let title = NSMutableAttributedString(
+            string: "Shot on ",
+            attributes: [
+                .font: titleFont,
+                .foregroundColor: UIColor.black,
+                .paragraphStyle: paragraphStyle
+            ]
         )
-        
-        drawSpecsLine(
-            in: context,
-            text: metadata.formattedSpecs,
-            centerX: frameWidth / 2,
-            y: textY + lineHeight + lineSpacing,
-            fontSize: specsFontSize
+
+        title.append(NSAttributedString(
+            string: metadata.deviceModel,
+            attributes: [
+                .font: titleBoldFont,
+                .foregroundColor: UIColor.black,
+                .paragraphStyle: paragraphStyle
+            ]
+        ))
+
+        let specs = NSAttributedString(
+            string: metadata.formattedSpecs,
+            attributes: [
+                .font: specsFont,
+                .foregroundColor: UIColor.black,
+                .paragraphStyle: paragraphStyle
+            ]
         )
+
+        let titleSize = title.size()
+        let specsSize = specs.size()
+        let lineSpacing: CGFloat = 8
+
+        let totalTextHeight = titleSize.height + lineSpacing + specsSize.height
+
+        let startY = bottomAreaTop + (bottomAreaHeight - totalTextHeight) / 2
+
+        let titleRect = CGRect(
+            x: (frameWidth - titleSize.width) / 2,
+            y: startY,
+            width: titleSize.width,
+            height: titleSize.height
+        )
+
+        let specsRect = CGRect(
+            x: (frameWidth - specsSize.width) / 2,
+            y: titleRect.maxY + lineSpacing,
+            width: specsSize.width,
+            height: specsSize.height
+        )
+
+        title.draw(in: titleRect)
+        specs.draw(in: specsRect)
     }
-    
+
+
     private func drawDeviceLine(
         in context: CGContext,
         text: String,
@@ -141,5 +185,17 @@ final class FrameGenerator {
         let textX = centerX - (textSize.width / 2)
         
         attributedString.draw(at: CGPoint(x: textX, y: y))
+    }
+    
+    private func perceptualFontSize(
+        canvasWidth: CGFloat,
+        baseWidth: CGFloat = 4000,
+        baseFontSize: CGFloat,
+        min minSize: CGFloat,
+        max maxSize: CGFloat
+    ) -> CGFloat {
+        let scale = sqrt(canvasWidth / baseWidth)
+        let size = baseFontSize * scale
+        return Swift.min(Swift.max(size, minSize), maxSize)
     }
 }
