@@ -59,17 +59,20 @@ final class GalleryViewModel {
     func saveFramedPhoto(storageService: StorageService) async throws {
         guard let originalImage = selectedImage,
               let framedImage = framedImage,
-              let metadata = metadata else {
+              let metadata = metadata,
+              let asset = selectedAsset else {
             return
         }
         
         let aspectRatio = originalImage.size.width / originalImage.size.height
+        let captureDate = asset.creationDate ?? Date()
         
         try storageService.saveFramedPhoto(
             originalImage: originalImage,
             framedImage: framedImage,
             metadata: metadata,
-            aspectRatio: aspectRatio
+            aspectRatio: aspectRatio,
+            captureDate: captureDate
         )
     }
     

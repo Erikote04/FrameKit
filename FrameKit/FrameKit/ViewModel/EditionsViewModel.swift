@@ -7,10 +7,10 @@
 
 import SwiftUI
 
-enum SortOption {
-    case captureDate
-    case modifiedDate
-    case fileName
+enum SortOption: String, CaseIterable {
+    case captureDate = "Capture Date"
+    case modifiedDate = "Modification Date"
+    case fileName = "File Name"
 }
 
 @Observable
@@ -20,7 +20,7 @@ final class EditionsViewModel {
     var selectedPhotos: Set<FramedPhoto.ID> = []
     var isSelectionMode = false
     var selectedPhoto: FramedPhoto?
-    var sortOption: SortOption = .captureDate
+    var sortOption: SortOption = .modifiedDate
     var isAscending = false
     
     private let storageService: StorageService
@@ -30,29 +30,22 @@ final class EditionsViewModel {
     }
     
     func loadFramedPhotos() {
-        framedPhotos = storageService.fetchAllFramedPhotos()
-        applySorting()
+        framedPhotos = storageService.fetchAllFramedPhotos(sortBy: sortOption, ascending: isAscending)
     }
     
     func setSortOption(_ option: SortOption) {
         sortOption = option
-        applySorting()
+        loadFramedPhotos()
     }
     
     func toggleSortOrder() {
         isAscending.toggle()
-        applySorting()
+        loadFramedPhotos()
     }
     
-    private func applySorting() {
-        switch sortOption {
-        case .captureDate:
-            framedPhotos.sort { isAscending ? $0.createdAt < $1.createdAt : $0.createdAt > $1.createdAt }
-        case .modifiedDate:
-            framedPhotos.sort { isAscending ? $0.createdAt < $1.createdAt : $0.createdAt > $1.createdAt }
-        case .fileName:
-            framedPhotos.sort { isAscending ? $0.deviceModel < $1.deviceModel : $0.deviceModel > $1.deviceModel }
-        }
+    func openPhoto(_ photo: FramedPhoto) {
+        selectedPhoto = photo
+        try? storageService.updatePhotoLastModified(photo)
     }
     
     func toggleSelection(for photo: FramedPhoto) {

@@ -23,7 +23,8 @@ final class StorageService {
         originalImage: UIImage,
         framedImage: UIImage,
         metadata: PhotoMetadata,
-        aspectRatio: Double
+        aspectRatio: Double,
+        captureDate: Date
     ) throws {
         guard let originalData = originalImage.pngData(),
               let framedData = framedImage.pngData() else {
@@ -35,7 +36,8 @@ final class StorageService {
             framedImageData: framedData,
             metadata: metadata.formattedSpecs,
             deviceModel: metadata.deviceModel,
-            aspectRatio: aspectRatio
+            aspectRatio: aspectRatio,
+            captureDate: captureDate
         )
         
         modelContext.insert(photo)
@@ -46,8 +48,10 @@ final class StorageService {
         let sortDescriptor: SortDescriptor<FramedPhoto>
         
         switch option {
-        case .captureDate, .modifiedDate:
-            sortDescriptor = SortDescriptor(\.createdAt, order: ascending ? .forward : .reverse)
+        case .captureDate:
+            sortDescriptor = SortDescriptor(\.captureDate, order: ascending ? .forward : .reverse)
+        case .modifiedDate:
+            sortDescriptor = SortDescriptor(\.lastModifiedDate, order: ascending ? .forward : .reverse)
         case .fileName:
             sortDescriptor = SortDescriptor(\.deviceModel, order: ascending ? .forward : .reverse)
         }
@@ -59,6 +63,11 @@ final class StorageService {
         } catch {
             return []
         }
+    }
+    
+    func updatePhotoLastModified(_ photo: FramedPhoto) throws {
+        photo.updateLastModified()
+        try modelContext.save()
     }
     
     func deleteFramedPhotos(_ photos: [FramedPhoto]) throws {

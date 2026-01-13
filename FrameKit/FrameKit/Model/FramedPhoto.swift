@@ -16,6 +16,8 @@ final class FramedPhoto {
     var metadata: String
     var deviceModel: String
     var createdAt: Date
+    var captureDate: Date
+    var lastModifiedDate: Date
     var aspectRatio: Double
     
     init(
@@ -24,7 +26,8 @@ final class FramedPhoto {
         framedImageData: Data,
         metadata: String,
         deviceModel: String,
-        aspectRatio: Double
+        aspectRatio: Double,
+        captureDate: Date
     ) {
         self.id = id
         self.originalImageData = originalImageData
@@ -32,6 +35,12 @@ final class FramedPhoto {
         self.metadata = metadata
         self.deviceModel = deviceModel
         self.createdAt = Date()
+        self.captureDate = captureDate
+        self.lastModifiedDate = Date()
         self.aspectRatio = aspectRatio
+    }
+    
+    func updateLastModified() {
+        self.lastModifiedDate = Date()
     }
 }

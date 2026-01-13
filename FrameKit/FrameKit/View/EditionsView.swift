@@ -91,7 +91,7 @@ struct EditionsView: View {
                         if viewModel.isSelectionMode {
                             viewModel.toggleSelection(for: photo)
                         } else {
-                            viewModel.selectedPhoto = photo
+                            viewModel.openPhoto(photo)
                             showPreview = true
                         }
                     },
@@ -175,7 +175,6 @@ struct EditionsView: View {
         } label: {
             Image(systemName: "trash")
         }
-        .tint(.red)
     }
     
     private var shareButton: some View {
