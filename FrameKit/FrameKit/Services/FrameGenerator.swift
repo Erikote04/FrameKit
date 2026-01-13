@@ -21,7 +21,8 @@ final class FrameGenerator {
         metadata: PhotoMetadata
     ) -> UIImage? {
         let imageSize = originalImage.size
-        _ = imageSize.width / imageSize.height
+        let aspectRatio = imageSize.width / imageSize.height
+        let isLandscape = aspectRatio > 1.0
         
         let frameWidth = imageSize.width + (horizontalMargin * 2)
         let frameHeight = imageSize.height + topMargin + bottomMargin
@@ -53,7 +54,8 @@ final class FrameGenerator {
                 in: cgContext,
                 metadata: metadata,
                 frameWidth: frameWidth,
-                imageBottom: topMargin + imageSize.height
+                imageBottom: topMargin + imageSize.height,
+                isLandscape: isLandscape
             )
         }
     }
@@ -62,8 +64,13 @@ final class FrameGenerator {
         in context: CGContext,
         metadata: PhotoMetadata,
         frameWidth: CGFloat,
-        imageBottom: CGFloat
+        imageBottom: CGFloat,
+        isLandscape: Bool
     ) {
+        let deviceFontSize: CGFloat = isLandscape ? 48 : 32
+        let specsFontSize: CGFloat = isLandscape ? 36 : 24
+        let lineHeight: CGFloat = isLandscape ? 60 : 40
+        
         let textY = imageBottom + textBottomPadding
         
         drawDeviceLine(
@@ -71,14 +78,16 @@ final class FrameGenerator {
             text: metadata.formattedDevice,
             deviceModel: metadata.deviceModel,
             centerX: frameWidth / 2,
-            y: textY
+            y: textY,
+            fontSize: deviceFontSize
         )
         
         drawSpecsLine(
             in: context,
             text: metadata.formattedSpecs,
             centerX: frameWidth / 2,
-            y: textY + 40 + lineSpacing
+            y: textY + lineHeight + lineSpacing,
+            fontSize: specsFontSize
         )
     }
     
@@ -87,10 +96,11 @@ final class FrameGenerator {
         text: String,
         deviceModel: String,
         centerX: CGFloat,
-        y: CGFloat
+        y: CGFloat,
+        fontSize: CGFloat
     ) {
-        let normalFont = UIFont.systemFont(ofSize: 32, weight: .regular)
-        let boldFont = UIFont.systemFont(ofSize: 32, weight: .bold)
+        let normalFont = UIFont.systemFont(ofSize: fontSize, weight: .regular)
+        let boldFont = UIFont.systemFont(ofSize: fontSize, weight: .bold)
         
         let normalAttributes: [NSAttributedString.Key: Any] = [
             .font: normalFont,
@@ -116,9 +126,10 @@ final class FrameGenerator {
         in context: CGContext,
         text: String,
         centerX: CGFloat,
-        y: CGFloat
+        y: CGFloat,
+        fontSize: CGFloat
     ) {
-        let font = UIFont.systemFont(ofSize: 24, weight: .regular)
+        let font = UIFont.systemFont(ofSize: fontSize, weight: .regular)
         
         let attributes: [NSAttributedString.Key: Any] = [
             .font: font,
