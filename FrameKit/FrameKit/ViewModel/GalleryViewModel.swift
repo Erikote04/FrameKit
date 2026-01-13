@@ -41,7 +41,7 @@ final class GalleryViewModel {
         }
         
         selectedImage = image
-        metadata = photoLibraryService.extractMetadata(from: asset)
+        metadata = await photoLibraryService.extractMetadata(from: asset)
         
         if let metadata = metadata {
             framedImage = frameGenerator.generateFramedImage(

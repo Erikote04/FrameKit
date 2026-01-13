@@ -61,24 +61,68 @@ final class PhotoLibraryService {
         }
     }
     
-    func extractMetadata(from asset: PHAsset) -> PhotoMetadata? {
-        guard PHAssetResource.assetResources(for: asset).first != nil else {
-            return nil
+    func extractMetadata(from asset: PHAsset) async -> PhotoMetadata? {
+        await withCheckedContinuation { continuation in
+            let options = PHContentEditingInputRequestOptions()
+            options.isNetworkAccessAllowed = true
+            
+            asset.requestContentEditingInput(with: options) { input, _ in
+                guard let input = input,
+                      let imageSource = CGImageSourceCreateWithURL(input.fullSizeImageURL! as CFURL, nil),
+                      let properties = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [String: Any],
+                      let exif = properties[kCGImagePropertyExifDictionary as String] as? [String: Any],
+                      let tiff = properties[kCGImagePropertyTIFFDictionary as String] as? [String: Any] else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let deviceModel = (tiff[kCGImagePropertyTIFFModel as String] as? String) ?? "iPhone"
+                
+                let focalLength: String
+                if let focalLengthValue = exif[kCGImagePropertyExifFocalLength as String] as? Double {
+                    focalLength = "\(Int(focalLengthValue))mm"
+                } else {
+                    focalLength = "24mm"
+                }
+                
+                let aperture: String
+                if let apertureValue = exif[kCGImagePropertyExifFNumber as String] as? Double {
+                    aperture = "ƒ/\(String(format: "%.1f", apertureValue))"
+                } else {
+                    aperture = "ƒ/1.8"
+                }
+                
+                let shutterSpeed: String
+                if let exposureTime = exif[kCGImagePropertyExifExposureTime as String] as? Double {
+                    if exposureTime >= 1 {
+                        shutterSpeed = "\(Int(exposureTime))s"
+                    } else {
+                        let denominator = Int(1 / exposureTime)
+                        shutterSpeed = "1/\(denominator)s"
+                    }
+                } else {
+                    shutterSpeed = "1/120s"
+                }
+                
+                let iso: String
+                if let isoArray = exif[kCGImagePropertyExifISOSpeedRatings as String] as? [Int],
+                   let isoValue = isoArray.first {
+                    iso = "ISO \(isoValue)"
+                } else {
+                    iso = "ISO 100"
+                }
+                
+                let metadata = PhotoMetadata(
+                    deviceModel: deviceModel,
+                    focalLength: focalLength,
+                    aperture: aperture,
+                    shutterSpeed: shutterSpeed,
+                    iso: iso
+                )
+                
+                continuation.resume(returning: metadata)
+            }
         }
-        
-        let deviceModel = asset.extractDeviceModel() ?? "iPhone"
-        let focalLength = asset.extractFocalLength() ?? "24mm"
-        let aperture = asset.extractAperture() ?? "f/1.8"
-        let shutterSpeed = asset.extractShutterSpeed() ?? "1/120s"
-        let iso = asset.extractISO() ?? "ISO 100"
-        
-        return PhotoMetadata(
-            deviceModel: deviceModel,
-            focalLength: focalLength,
-            aperture: aperture,
-            shutterSpeed: shutterSpeed,
-            iso: iso
-        )
     }
     
     func saveToLibrary(_ image: UIImage) async -> Bool {
@@ -101,49 +145,5 @@ final class PhotoLibraryService {
                 continuation.resume(returning: success)
             }
         }
-    }
-}
-
-private extension PHAsset {
-    
-    func extractDeviceModel() -> String? {
-        guard let resources = PHAssetResource.assetResources(for: self).first else {
-            return nil
-        }
-        return resources.value(forKey: "uniformTypeIdentifier") as? String
-    }
-    
-    func extractFocalLength() -> String? {
-        guard let focalLength = self.value(forKey: "focalLength") as? Double else {
-            return nil
-        }
-        return "\(Int(focalLength))mm"
-    }
-    
-    func extractAperture() -> String? {
-        guard let aperture = self.value(forKey: "aperture") as? Double else {
-            return nil
-        }
-        return "ƒ/\(String(format: "%.1f", aperture))"
-    }
-    
-    func extractShutterSpeed() -> String? {
-        guard let speed = self.value(forKey: "exposureTime") as? Double else {
-            return nil
-        }
-        
-        if speed >= 1 {
-            return "\(Int(speed))s"
-        } else {
-            let denominator = Int(1 / speed)
-            return "1/\(denominator)s"
-        }
-    }
-    
-    func extractISO() -> String? {
-        guard let iso = self.value(forKey: "ISO") as? Int else {
-            return nil
-        }
-        return "ISO \(iso)"
     }
 }
