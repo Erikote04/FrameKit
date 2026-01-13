@@ -137,5 +137,3 @@ struct EditionsView: View {
         }
     }
 }
-
-
