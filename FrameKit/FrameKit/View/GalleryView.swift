@@ -35,7 +35,7 @@ struct GalleryView: View {
             .alert("Invalid Photo", isPresented: $showInvalidPhotoAlert) {
                 Button("OK", role: .cancel) {}
             } message: {
-                Text("This photo cannot be framed. Only photos taken with a camera are supported. Screenshots are not compatible.")
+                Text("This photo cannot be framed. Only photos taken with a camera are supported. Screenshots and dowloaded images are not compatible.")
             }
             .fullScreenCover(isPresented: $showPreview) {
                 if let framedImage = viewModel.framedImage {
