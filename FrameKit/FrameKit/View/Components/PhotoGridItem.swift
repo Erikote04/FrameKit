@@ -5,6 +5,7 @@
 //  Created by Erik Sebastian de Erice Jerez on 13/1/26.
 //
 
+import SwiftUI
 
 struct PhotoGridItem: View {
     
